@@ -1,0 +1,48 @@
+# Plataforma 3aq Talent — ambiente de desenvolvimento
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: talent
+      POSTGRES_PASSWORD: talent_dev
+      POSTGRES_DB: talent_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talent -d talent_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+
+  api:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://talent:talent_dev@postgres:5432/talent_db?schema=public
+      JWT_SECRET: ${JWT_SECRET:-altere_em_producao_minimo_32_caracteres_segredo}
+      AI_SERVICE_URL: http://ai-service:8000
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      PORT: "3001"
+      NODE_ENV: development
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+
+volumes:
+  pgdata:
+  uploads:

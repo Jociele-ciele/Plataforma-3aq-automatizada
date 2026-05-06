@@ -4,11 +4,11 @@ import helmet from "helmet";
 import fs from "node:fs/promises";
 import { config } from "./config.js";
 import authRoutes from "./routes/auth.js";
-import jobsRoutes from "./src/routes/jobs.js";
+import jobsRoutes from "./routes/jobs.js";
 import applicationsRoutes from "./routes/applications.js";
-import candidatesRoutes from "./src/routes/candidates.js";
-import submissionsRoutes from "./src/routes/submissions.js";
-import githubRoutes from "./src/routes/github.js";
+import candidatesRoutes from "./routes/candidates.js";
+import submissionsRoutes from "./routes/submissions.js";
+import githubRoutes from "./routes/github.js";
 
 const app = express();
 app.use(helmet());
