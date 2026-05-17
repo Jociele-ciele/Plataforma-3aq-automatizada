@@ -17,19 +17,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <nav className="nav-links">
           {user ? (
             <>
-              {user.role === "CANDIDATE" && (
+              {user.role === "CANDIDATO" && (
                 <>
                   <Link to="/candidato">Painel</Link>
                   <Link to="/candidato/vagas">Vagas</Link>
                 </>
               )}
-              {user.role === "RECRUITER" && (
+              {user.role === "RECRUTADOR" && (
                 <>
                   <Link to="/recrutador">Pipeline</Link>
                   <Link to="/recrutador/vagas">Minhas vagas</Link>
                 </>
               )}
-              <span className="muted">{user.name}</span>
+              <span className="muted">{user.nome}</span>
               <button type="button" className="secondary" onClick={logout}>
                 Sair
               </button>

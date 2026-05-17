@@ -4,16 +4,16 @@ import { api } from "../api/client";
 import Layout from "../components/layout";
 
 type Me = {
-  candidateProfile: null | {
-    technicalScore: number | null;
-    fitScore: number | null;
-    cvExtractedText: string | null;
+  perfil_candidato: null | {
+    nota_tecnica: number | null;
+    nota_compatibilidade: number | null;
+    texto_extraido_cv: string | null;
   };
 };
 
 export default function HomeCandidato() {
   const [me, setMe] = useState<Me | null>(null);
-  const [analyze, setAnalyze] = useState<Record<string, unknown> | null>(null);
+  const [analise, setAnalise] = useState<Record<string, unknown> | null>(null);
   const [gh, setGh] = useState<Record<string, unknown> | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -33,47 +33,63 @@ export default function HomeCandidato() {
   async function runAnalyze() {
     setErr(null);
     try {
-      const { data } = await api.post("/candidates/analyze-cv");
-      setAnalyze(data);
+      const { data } = await api.post("/candidatos/analisar-cv");
+      setAnalise(data);
       await refreshMe();
     } catch (e: unknown) {
-      setErr(String((e as { response?: { data?: { error?: string } } }).response?.data?.error ?? e));
+      setErr(
+        String(
+          (e as { response?: { data?: { error?: string } } }).response?.data
+            ?.error ?? e,
+        ),
+      );
     }
   }
 
   async function runGithub() {
     setErr(null);
     try {
-      const { data } = await api.post("/github/analyze", {});
+      const { data } = await api.post("/github/analisar", {});
       setGh(data);
       await refreshMe();
     } catch (e: unknown) {
-      setErr(String((e as { response?: { data?: { error?: string } } }).response?.data?.error ?? e));
+      setErr(
+        String(
+          (e as { response?: { data?: { error?: string } } }).response?.data
+            ?.error ?? e,
+        ),
+      );
     }
   }
 
-  const p = me?.candidateProfile;
+  const p = me?.perfil_candidato;
 
   return (
     <Layout>
       <h1 style={{ marginTop: 0 }}>Painel do candidato</h1>
       <p className="muted">
-        Utilize o fluxo: vagas → candidatura → teste. Triagem IA e GitHub são opcionais por candidatura/vaga.
+        Utilize o fluxo: vagas → candidatura → teste. Triagem IA e GitHub são
+        opcionais por candidatura/vaga.
       </p>
 
       <div className="grid grid-2" style={{ marginTop: "1.5rem" }}>
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Estado do perfil</h3>
           <p className="muted">
-            Score técnico (IA): <strong>{p?.technicalScore ?? "—"}</strong>
+            Score técnico (IA): <strong>{p?.nota_tecnica ?? "—"}</strong>
             <br />
-            Adequação à vaga: <strong>{p?.fitScore ?? "—"}</strong>
+            Adequação à vaga:{" "}
+            <strong>{p?.nota_compatibilidade ?? "—"}</strong>
           </p>
           <p className="muted" style={{ fontSize: "0.85rem" }}>
-            Envie um ficheiro .txt como CV no protótipo (ou pipeline PDF em produção). O seed já inclui texto de exemplo
-            para teste rápido.
+            Envie um ficheiro .txt como CV no protótipo (ou pipeline PDF em
+            produção). O seed já inclui texto de exemplo para teste rápido.
           </p>
-          <button type="button" onClick={runAnalyze} style={{ marginTop: "0.5rem" }}>
+          <button
+            type="button"
+            onClick={runAnalyze}
+            style={{ marginTop: "0.5rem" }}
+          >
             Correr triagem IA
           </button>
         </div>
@@ -100,12 +116,18 @@ export default function HomeCandidato() {
         </div>
       </div>
 
-      {err && <p className="error" style={{ marginTop: "1rem" }}>{err}</p>}
+      {err && (
+        <p className="error" style={{ marginTop: "1rem" }}>
+          {err}
+        </p>
+      )}
 
-      {analyze && (
+      {analise && (
         <div className="card" style={{ marginTop: "1rem" }}>
           <h3 style={{ marginTop: 0 }}>Última triagem</h3>
-          <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.9rem" }}>{JSON.stringify(analyze, null, 2)}</pre>
+          <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.9rem" }}>
+            {JSON.stringify(analise, null, 2)}
+          </pre>
         </div>
       )}
 

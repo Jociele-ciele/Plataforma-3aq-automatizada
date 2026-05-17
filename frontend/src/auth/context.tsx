@@ -9,27 +9,32 @@ import {
 } from "react";
 import { api, setAuthToken } from "../api/client";
 
-export type Role = "CANDIDATE" | "RECRUITER";
+export type Role = "CANDIDATO" | "RECRUTADOR";
 
-export type User = {
+export type Utilizador = {
   id: string;
   email: string;
-  name: string;
+  nome: string;
   role: Role;
 };
 
 type AuthState = {
-  user: User | null;
+  user: Utilizador | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (data: { email: string; password: string; name: string; githubLogin?: string }) => Promise<User>;
+  login: (email: string, password: string) => Promise<Utilizador>;
+  register: (data: {
+    email: string;
+    password: string;
+    nome: string;
+    github_login?: string;
+  }) => Promise<Utilizador>;
   logout: () => void;
 };
 
 const Ctx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Utilizador | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadMe = useCallback(async () => {
@@ -45,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({
         id: data.id,
         email: data.email,
-        name: data.name,
+        nome: data.nome,
         role: data.role,
       });
     } catch {
@@ -63,16 +68,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const { data } = await api.post("/auth/login", { email, password });
     setAuthToken(data.token);
-    const u = data.user as User;
+    const u = data.user as Utilizador;
     setUser(u);
     return u;
   }, []);
 
   const register = useCallback(
-    async (payload: { email: string; password: string; name: string; githubLogin?: string }) => {
+    async (payload: {
+      email: string;
+      password: string;
+      nome: string;
+      github_login?: string;
+    }) => {
       const { data } = await api.post("/auth/register", payload);
       setAuthToken(data.token);
-      const u = data.user as User;
+      const u = data.user as Utilizador;
       setUser(u);
       return u;
     },

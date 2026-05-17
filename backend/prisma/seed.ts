@@ -6,88 +6,94 @@ const prisma = new PrismaClient();
 async function main() {
   const hash = await bcrypt.hash("Demo@12345", 10);
 
-  const recruiter = await prisma.user.upsert({
+  const recrutador = await prisma.users.upsert({
     where: { email: "recrutador@3aq.demo" },
     update: {},
     create: {
       email: "recrutador@3aq.demo",
-      passwordHash: hash,
-      name: "Equipa RH 3aq",
-      role: Role.RECRUITER,
+      senha_hash: hash,
+      nome: "Equipa RH 3aq",
+      role: Role.RECRUTADOR,
     },
   });
 
-  const candidateUser = await prisma.user.upsert({
+  const candidato = await prisma.users.upsert({
     where: { email: "candidato@demo.com" },
     update: {},
     create: {
       email: "candidato@demo.com",
-      passwordHash: hash,
-      name: "Candidato Demo",
-      role: Role.CANDIDATE,
-      githubLogin: "octocat",
+      senha_hash: hash,
+      nome: "Candidato Demo",
+      role: Role.CANDIDATO,
+      github_login: "octocat",
     },
   });
 
-  const profile = await prisma.candidateProfile.upsert({
-    where: { userId: candidateUser.id },
+  const perfil = await prisma.perfis_candidatos.upsert({
+    where: { usuario_id: candidato.id },
     update: {},
     create: {
-      userId: candidateUser.id,
+      usuario_id: candidato.id,
       bio: "Desenvolvedor full-stack em formação.",
-      cvExtractedText:
+      texto_extraido_cv:
         "Experiência em JavaScript, React, Node.js, PostgreSQL. Projetos com REST APIs e testes automatizados.",
     },
   });
 
-  const job = await prisma.job.upsert({
+  const vaga = await prisma.vagas.upsert({
     where: { id: "00000000-0000-4000-8000-000000000001" },
     update: {},
     create: {
       id: "00000000-0000-4000-8000-000000000001",
-      title: "Desenvolvedor Full Stack Júnior",
-      description:
+      titulo: "Desenvolvedor Full Stack Júnior",
+      descricao:
         "Vaga para integrar equipa de produtos internos. Valorizamos Javascript/Typescript e boas práticas.",
-      stack: ["javascript", "react", "node", "postgresql"],
-      criteria: {
+      tecnologias: ["javascript", "react", "node", "postgresql"],
+      criterios: {
         weights: { cvKeywords: 0.2, github: 0.2, technicalTest: 0.6 },
       },
-      isOpen: true,
-      recruiterId: recruiter.id,
-      challenges: {
+      aberta: true,
+      recrutador_id: recrutador.id,
+      desafios: {
         create: {
-          title: "Soma de pares no array",
-          description:
-            'Implemente a função solution que recebe um array de números e devolve a soma apenas dos elementos pares. Ex.: solution([1,2,3,4]) => 6',
-          language: "javascript",
-          starterCode: `function solution(nums) {
+          titulo: "Soma de pares no array",
+          descricao:
+            "Implemente a função solution que recebe um array de números e devolve a soma apenas dos elementos pares. Ex.: solution([1,2,3,4]) => 6",
+          linguagem: "javascript",
+          codigo_inicial: `function solution(nums) {
   // TODO
 }`,
-          testCases: [
+          casos_teste: [
             { input: [1, 2, 3, 4], expected: 6 },
             { input: [0], expected: 0 },
             { input: [1, 3, 5], expected: 0 },
             { input: [2, 4, 6], expected: 12 },
           ],
-          timeLimitMs: 3000,
+          limite_tempo_ms: 3000,
         },
       },
     },
   });
 
-  await prisma.application.upsert({
+  await prisma.candidaturas.upsert({
     where: {
-      jobId_candidateId: { jobId: job.id, candidateId: profile.id },
+      vaga_id_candidato_id: {
+        vaga_id: vaga.id,
+        candidato_id: perfil.id,
+      },
     },
     update: {},
     create: {
-      jobId: job.id,
-      candidateId: profile.id,
-      status: "SUBMITTED",
+      vaga_id: vaga.id,
+      candidato_id: perfil.id,
+      status: "ENVIADO",
     },
   });
 
-  console.log("Seed concluído.", { recruiter: recruiter.email, candidate: candidateUser.email });
+  console.log("Seed concluído.", {
+    recrutador: recrutador.email,
+    candidato: candidato.email,
+  });
 }
 
 main()

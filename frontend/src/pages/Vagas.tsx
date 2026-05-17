@@ -3,37 +3,42 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import Layout from "../components/layout";
 
-type Job = {
+type Vaga = {
   id: string;
-  title: string;
-  description: string;
-  stack: string[];
+  titulo: string;
+  descricao: string;
+  tecnologias: string[];
 };
+
 export default function Vagas() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [vagas, setVagas] = useState<Vaga[]>([]);
 
   useEffect(() => {
-    api.get("/jobs").then((r) => setJobs(r.data));
+    api.get("/vagas").then((r) => setVagas(r.data));
   }, []);
 
   return (
     <Layout>
       <h1 style={{ marginTop: 0 }}>Vagas</h1>
       <div className="grid">
-        {jobs.map((j) => (
-          <div key={j.id} className="card">
-            <h3 style={{ marginTop: 0 }}>{j.title}</h3>
+        {vagas.map((v) => (
+          <div key={v.id} className="card">
+            <h3 style={{ marginTop: 0 }}>{v.titulo}</h3>
             <p className="muted" style={{ fontSize: "0.95rem" }}>
-              {j.description.slice(0, 220)}
-              {j.description.length > 220 ? "…" : ""}
+              {v.descricao.slice(0, 220)}
+              {v.descricao.length > 220 ? "…" : ""}
             </p>
             <p className="muted" style={{ fontSize: "0.85rem" }}>
-              Stack: {j.stack?.join(", ") || "—"}
+              Stack: {v.tecnologias?.join(", ") || "—"}
             </p>
-            <Link to={`/candidato/vagas/${j.id}`}>Detalhes e candidatura</Link>
+            <Link to={`/candidato/vagas/${v.id}`}>Detalhes e candidatura</Link>
           </div>
         ))}
-        {jobs.length === 0 && <p className="muted">Sem vagas públicas. Crie uma com o utilizador recrutador (seed).</p>}
+        {vagas.length === 0 && (
+          <p className="muted">
+            Sem vagas públicas. Crie uma com o utilizador recrutador (seed).
+          </p>
+        )}
       </div>
     </Layout>
   );

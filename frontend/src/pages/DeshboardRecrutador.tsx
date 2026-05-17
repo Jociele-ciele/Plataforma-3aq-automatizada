@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import Layout from "../components/layout";
 
-type Row = {
+type Linha = {
   id: string;
   status: string;
-  rankingScore: number;
-  job: { title: string };
-  candidate: { user: { name: string; email: string } };
-  submissions: { scorePercent: number }[];
+  pontuacao_ranking: number;
+  vaga: { titulo: string };
+  candidato: { usuario: { nome: string; email: string } };
+  submissoes: { percentual_nota: number }[];
 };
+
 export default function DashboardRecrutador() {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [linhas, setLinhas] = useState<Linha[]>([]);
 
   useEffect(() => {
-    api.get("/applications/pipeline").then((r) => setRows(r.data));
+    api.get("/candidaturas/pipeline").then((r) => setLinhas(r.data));
   }, []);
 
   return (
@@ -37,30 +38,32 @@ export default function DashboardRecrutador() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((a) => (
-              <tr key={a.id}>
+            {linhas.map((c) => (
+              <tr key={c.id}>
                 <td>
-                  {a.candidate.user.name}
+                  {c.candidato.usuario.nome}
                   <div className="muted" style={{ fontSize: "0.8rem" }}>
-                    {a.candidate.user.email}
+                    {c.candidato.usuario.email}
                   </div>
                 </td>
-                <td>{a.job.title}</td>
-                <td>{a.status}</td>
+                <td>{c.vaga.titulo}</td>
+                <td>{c.status}</td>
                 <td>
-                  {a.submissions.length
-                    ? Math.max(...a.submissions.map((s) => s.scorePercent))
+                  {c.submissoes.length
+                    ? Math.max(
+                        ...c.submissoes.map((s) => s.percentual_nota),
+                      )
                     : "—"}
                 </td>
                 <td>
-                  <strong>{a.rankingScore}</strong>
+                  <strong>{c.pontuacao_ranking}</strong>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {rows.length === 0 && (
+      {linhas.length === 0 && (
         <p className="muted">Sem candidaturas nas suas vagas.</p>
       )}
     </Layout>

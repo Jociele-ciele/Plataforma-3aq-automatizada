@@ -26,7 +26,9 @@ export function authMiddleware(requiredRoles?: Role[]) {
     }
     try {
       const decoded = jwt.verify(token, config.jwtSecret) as AuthPayload;
-      const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
+      const user = await prisma.users.findUnique({
+        where: { id: decoded.sub },
+      });
       if (!user) {
         res.status(401).json({ error: "Utilizador inválido" });
         return;

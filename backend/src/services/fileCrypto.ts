@@ -1,6 +1,6 @@
-import crypto from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
+import crypto from "crypto";
+import { promises as fs } from "fs";
+import path from "path";
 import { config } from "../config.js";
 
 const ALGO = "aes-256-gcm";

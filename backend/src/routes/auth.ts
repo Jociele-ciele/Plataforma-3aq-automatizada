@@ -7,85 +7,102 @@ import { authMiddleware, signToken } from "../middleware/auth.js";
 
 const router = Router();
 
+const usuarioPublico = {
+  id: true,
+  email: true,
+  nome: true,
+  role: true,
+  github_login: true,
+} as const;
+
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  name: z.string().min(2),
-  githubLogin: z.string().optional(),
+  nome: z.string().min(2),
+  github_login: z.string().min(1).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
 });
 
 router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: "Dados inválidos", details: parsed.error.flatten() });
-    return;
+    return res.status(400).json({
+      error: "Dados inválidos",
+      details: parsed.error.flatten(),
+    });
   }
-  const { email, password, name, githubLogin } = parsed.data;
-  const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) {
-    res.status(409).json({ error: "Email já registado" });
-    return;
+
+  const { email, password, nome, github_login } = parsed.data;
+
+  const existe = await prisma.users.findUnique({ where: { email } });
+  if (existe) {
+    return res.status(409).json({ error: "Email já registrado" });
   }
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
+
+  const senha_hash = await bcrypt.hash(password, 10);
+
+  const user = await prisma.users.create({
     data: {
       email,
-      passwordHash,
-      name,
-      role: Role.CANDIDATE,
-      githubLogin: githubLogin || null,
-      candidateProfile: { create: {} },
+      senha_hash,
+      nome,
+      role: Role.CANDIDATO,
+      github_login: github_login ?? null,
+      perfis_candidatos: { create: {} },
     },
+    select: usuarioPublico,
   });
-  const token = signToken({ sub: user.id, role: user.role });
-  res.status(201).json({
-    token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
-  });
-});
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+  const token = signToken({ sub: user.id, role: user.role });
+
+  return res.status(201).json({ token, user });
 });
 
 router.post("/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Credenciais inválidas" });
-    return;
+    return res.status(400).json({ error: "Credenciais inválidas" });
   }
+
   const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    res.status(401).json({ error: "Email ou palavra-passe incorretos" });
-    return;
-  }
-  const token = signToken({ sub: user.id, role: user.role });
-  res.json({
-    token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+
+  const user = await prisma.users.findUnique({
+    where: { email },
+    select: { ...usuarioPublico, senha_hash: true },
   });
+
+  if (!user || !(await bcrypt.compare(password, user.senha_hash))) {
+    return res.status(401).json({ error: "Email ou senha incorretos" });
+  }
+
+  const { senha_hash: _, ...publico } = user;
+  const token = signToken({ sub: publico.id, role: publico.role });
+
+  return res.json({ token, user: publico });
 });
 
 router.get("/me", authMiddleware(), async (req, res) => {
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: req.auth!.userId },
-    include: { candidateProfile: true },
+    select: {
+      ...usuarioPublico,
+      perfis_candidatos: true,
+    },
   });
+
   if (!user) {
-    res.status(404).json({ error: "Não encontrado" });
-    return;
+    return res.status(404).json({ error: "Utilizador não encontrado" });
   }
-  res.json({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    githubLogin: user.githubLogin,
-    candidateProfile: user.candidateProfile,
+
+  const { perfis_candidatos, ...dados } = user;
+
+  return res.json({
+    ...dados,
+    perfil_candidato: perfis_candidatos,
   });
 });
 

@@ -2,119 +2,157 @@
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('CANDIDATE', 'RECRUITER');
+CREATE TYPE "Role" AS ENUM ('CANDIDATO', 'RECRUTADOR');
 
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password_hash" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "senha_hash" TEXT NOT NULL,
+    "nome" TEXT NOT NULL,
     "role" "Role" NOT NULL,
     "github_login" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "criado_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "atualizado_em" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "candidate_profiles" (
+CREATE TABLE "perfis_candidatos" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "phone" TEXT,
+    "usuario_id" TEXT NOT NULL,
+    "telefone" TEXT,
     "bio" TEXT,
-    "cv_file_path" TEXT,
-    "cv_mime_type" TEXT,
-    "cv_extracted_text" TEXT,
-    "technical_score" DOUBLE PRECISION,
-    "fit_score" DOUBLE PRECISION,
-    "last_analysis_at" TIMESTAMP(3),
-    "github_analysis_json" JSONB,
+    "caminho_cv" TEXT,
+    "tipo_mime_cv" TEXT,
+    "texto_extraido_cv" TEXT,
+    "nota_tecnica" DOUBLE PRECISION,
+    "nota_compatibilidade" DOUBLE PRECISION,
+    "ultima_analise_em" TIMESTAMP(3),
+    "analise_github_json" JSONB,
 
-    CONSTRAINT "candidate_profiles_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "perfis_candidatos_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "jobs" (
+CREATE TABLE "vagas" (
     "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "stack" TEXT[],
-    "criteria" JSONB,
-    "is_open" BOOLEAN NOT NULL DEFAULT true,
-    "recruiter_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "titulo" TEXT NOT NULL,
+    "descricao" TEXT NOT NULL,
+    "tecnologias" TEXT[],
+    "criterios" JSONB,
+    "aberta" BOOLEAN NOT NULL DEFAULT true,
+    "recrutador_id" TEXT NOT NULL,
+    "criado_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "jobs_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "vagas_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "applications" (
+CREATE TABLE "candidaturas" (
     "id" TEXT NOT NULL,
-    "job_id" TEXT NOT NULL,
-    "candidate_id" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'SUBMITTED',
-    "applied_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "vaga_id" TEXT NOT NULL,
+    "candidato_id" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'ENVIADO',
+    "candidatura_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "applications_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "candidaturas_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "challenges" (
+CREATE TABLE "desafios" (
     "id" TEXT NOT NULL,
-    "job_id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "language" TEXT NOT NULL DEFAULT 'javascript',
-    "starter_code" TEXT NOT NULL,
-    "test_cases" JSONB NOT NULL,
-    "time_limit_ms" INTEGER NOT NULL DEFAULT 5000,
+    "vaga_id" TEXT NOT NULL,
+    "titulo" TEXT NOT NULL,
+    "descricao" TEXT NOT NULL,
+    "linguagem" TEXT NOT NULL DEFAULT 'javascript',
+    "codigo_inicial" TEXT NOT NULL,
+    "casos_teste" JSONB NOT NULL,
+    "limite_tempo_ms" INTEGER NOT NULL DEFAULT 5000,
 
-    CONSTRAINT "challenges_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "desafios_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "submissions" (
+CREATE TABLE "submissoes" (
     "id" TEXT NOT NULL,
-    "application_id" TEXT NOT NULL,
-    "challenge_id" TEXT NOT NULL,
-    "code" TEXT NOT NULL,
-    "passed_tests" INTEGER NOT NULL,
-    "total_tests" INTEGER NOT NULL,
+    "candidatura_id" TEXT NOT NULL,
+    "desafio_id" TEXT NOT NULL,
+    "codigo" TEXT NOT NULL,
+    "testes_aprovados" INTEGER NOT NULL,
+    "total_testes" INTEGER NOT NULL,
     "feedback" TEXT NOT NULL,
-    "score_percent" DOUBLE PRECISION NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "percentual_nota" DOUBLE PRECISION NOT NULL,
+    "criado_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "submissions_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "submissoes_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "users_email_key"
+ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "candidate_profiles_user_id_key" ON "candidate_profiles"("user_id");
+CREATE UNIQUE INDEX "perfis_candidatos_usuario_id_key"
+ON "perfis_candidatos"("usuario_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "applications_job_id_candidate_id_key" ON "applications"("job_id", "candidate_id");
+CREATE UNIQUE INDEX "candidaturas_vaga_id_candidato_id_key"
+ON "candidaturas"("vaga_id", "candidato_id");
 
 -- AddForeignKey
-ALTER TABLE "candidate_profiles" ADD CONSTRAINT "candidate_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "perfis_candidatos"
+ADD CONSTRAINT "perfis_candidatos_usuario_id_fkey"
+FOREIGN KEY ("usuario_id")
+REFERENCES "users"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_recruiter_id_fkey" FOREIGN KEY ("recruiter_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "vagas"
+ADD CONSTRAINT "vagas_recrutador_id_fkey"
+FOREIGN KEY ("recrutador_id")
+REFERENCES "users"("id")
+ON DELETE RESTRICT
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "candidaturas"
+ADD CONSTRAINT "candidaturas_vaga_id_fkey"
+FOREIGN KEY ("vaga_id")
+REFERENCES "vagas"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_candidate_id_fkey" FOREIGN KEY ("candidate_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "candidaturas"
+ADD CONSTRAINT "candidaturas_candidato_id_fkey"
+FOREIGN KEY ("candidato_id")
+REFERENCES "perfis_candidatos"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "challenges" ADD CONSTRAINT "challenges_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "desafios"
+ADD CONSTRAINT "desafios_vaga_id_fkey"
+FOREIGN KEY ("vaga_id")
+REFERENCES "vagas"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "submissions" ADD CONSTRAINT "submissions_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "applications"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "submissoes"
+ADD CONSTRAINT "submissoes_candidatura_id_fkey"
+FOREIGN KEY ("candidatura_id")
+REFERENCES "candidaturas"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "submissions" ADD CONSTRAINT "submissions_challenge_id_fkey" FOREIGN KEY ("challenge_id") REFERENCES "challenges"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "submissoes"
+ADD CONSTRAINT "submissoes_desafio_id_fkey"
+FOREIGN KEY ("desafio_id")
+REFERENCES "desafios"("id")
+ON DELETE RESTRICT
+ON UPDATE CASCADE;

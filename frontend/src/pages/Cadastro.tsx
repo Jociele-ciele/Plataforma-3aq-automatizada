@@ -6,7 +6,7 @@ import Layout from "../components/layout";
 export default function Cadastro() {
   const { register } = useAuth();
   const nav = useNavigate();
-  const [name, setName] = useState("");
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [github, setGithub] = useState("");
@@ -19,8 +19,8 @@ export default function Cadastro() {
       await register({
         email,
         password,
-        name,
-        githubLogin: github.trim() || undefined,
+        nome,
+        github_login: github.trim() || undefined,
       });
       nav("/candidato");
     } catch {
@@ -42,11 +42,11 @@ export default function Cadastro() {
           style={{ marginTop: "1rem" }}
         >
           <div>
-            <label htmlFor="name">Nome</label>
+            <label htmlFor="nome">Nome</label>
             <input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
               required
               minLength={2}
             />

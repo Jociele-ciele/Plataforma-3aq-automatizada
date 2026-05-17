@@ -15,7 +15,7 @@ function Guard({
   role,
   children,
 }: {
-  role: "CANDIDATE" | "RECRUITER";
+  role: "CANDIDATO" | "RECRUTADOR";
   children: ReactNode;
 }) {
   const { user, loading } = useAuth();
@@ -36,7 +36,7 @@ export default function App() {
       <Route
         path="/candidato"
         element={
-          <Guard role="CANDIDATE">
+          <Guard role="CANDIDATO">
             <HomeCandidato />
           </Guard>
         }
@@ -44,7 +44,7 @@ export default function App() {
       <Route
         path="/candidato/vagas"
         element={
-          <Guard role="CANDIDATE">
+          <Guard role="CANDIDATO">
             <Vagas />
           </Guard>
         }
@@ -52,7 +52,7 @@ export default function App() {
       <Route
         path="/candidato/vagas/:id"
         element={
-          <Guard role="CANDIDATE">
+          <Guard role="CANDIDATO">
             <DetalhesDaVaga />
           </Guard>
         }
@@ -60,7 +60,7 @@ export default function App() {
       <Route
         path="/candidato/teste/:applicationId/:challengeId"
         element={
-          <Guard role="CANDIDATE">
+          <Guard role="CANDIDATO">
             <PageTeste />
           </Guard>
         }
@@ -69,7 +69,7 @@ export default function App() {
       <Route
         path="/recrutador"
         element={
-          <Guard role="RECRUITER">
+          <Guard role="RECRUTADOR">
             <DashboardRecrutador />
           </Guard>
         }
@@ -77,7 +77,7 @@ export default function App() {
       <Route
         path="/recrutador/vagas"
         element={
-          <Guard role="RECRUITER">
+          <Guard role="RECRUTADOR">
             <VagasRecrutador />
           </Guard>
         }

@@ -15,7 +15,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const u = await login(email, password);
-      nav(u.role === "RECRUITER" ? "/recrutador" : "/candidato");
+      nav(u.role === "RECRUTADOR" ? "/recrutador" : "/candidato");
     } catch {
       setError("Não foi possível entrar. Verifique as credenciais.");
     }
@@ -25,8 +25,14 @@ export default function LoginPage() {
     <Layout>
       <div className="card" style={{ maxWidth: 420, margin: "0 auto" }}>
         <h1 style={{ marginTop: 0 }}>Entrar</h1>
-        <p className="muted">Acesso a candidatos e recrutadores (perfis distintos).</p>
-        <form onSubmit={onSubmit} className="grid" style={{ marginTop: "1rem" }}>
+        <p className="muted">
+          Acesso a candidatos e recrutadores (perfis distintos).
+        </p>
+        <form
+          onSubmit={onSubmit}
+          className="grid"
+          style={{ marginTop: "1rem" }}
+        >
           <div>
             <label htmlFor="email">Email</label>
             <input
