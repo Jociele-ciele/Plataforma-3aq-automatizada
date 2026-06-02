@@ -1,44 +1,38 @@
-import type { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { config } from "../config.js";
-import { prisma } from "../db.js";
-import type { Role } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import { verifyAccessToken, TokenPayload } from "../utils/jwt";
+import { UnauthorizedError, ForbiddenError } from "../utils/errors";
+import { Role } from "@prisma/client";
 
-export type AuthPayload = { sub: string; role: Role };
-
-declare module "express-serve-static-core" {
-  interface Request {
-    auth?: { userId: string; role: Role };
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: TokenPayload;
+    }
   }
 }
 
-export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, config.jwtSecret, { expiresIn: "7d" });
+export function authenticate(req: Request, _res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith("Bearer ")) {
+    throw new UnauthorizedError("Token não enviado");
+  }
+  const token = header.slice("Bearer ".length).trim();
+  try {
+    const payload = verifyAccessToken(token);
+    req.user = payload;
+    next();
+  } catch {
+    throw new UnauthorizedError("Token inválido ou expirado");
+  }
 }
 
-export function authMiddleware(requiredRoles?: Role[]) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const header = req.headers.authorization;
-    const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
-    if (!token) {
-      res.status(401).json({ error: "Token em falta" });
-      return;
+export function authorize(...roles: Role[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user) throw new UnauthorizedError();
+    if (!roles.includes(req.user.role)) {
+      throw new ForbiddenError("Você não tem permissão para acessar este recurso");
     }
-    try {
-      const decoded = jwt.verify(token, config.jwtSecret) as AuthPayload;
-      const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
-      if (!user) {
-        res.status(401).json({ error: "Utilizador inválido" });
-        return;
-      }
-      if (requiredRoles?.length && !requiredRoles.includes(user.role)) {
-        res.status(403).json({ error: "Permissão negada" });
-        return;
-      }
-      req.auth = { userId: user.id, role: user.role };
-      next();
-    } catch {
-      res.status(401).json({ error: "Token inválido" });
-    }
+    next();
   };
 }
