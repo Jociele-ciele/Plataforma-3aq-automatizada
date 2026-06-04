@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/context";
 import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import Cadastro from "./pages/Cadastro";
+import LoginPage from "./pages/auth/Login";
+import Cadastro from "./pages/auth/Cadastro";
 import HomeCandidato from "./pages/HomeCandidato";
 import Vagas from "./pages/Vagas";
 import DetalhesDaVaga from "./pages/DetalhesDaVaga";
 import PageTeste from "./pages/PageTeste";
-import DashboardRecrutador from "./pages/DeshboardRecrutador";
+import DashboardRecrutador from "./pages/Dashboard/RecrutadorDeshboard";
 import VagasRecrutador from "./pages/VagasRecrutador";
 
 function Guard({
