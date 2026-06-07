@@ -1,87 +1,57 @@
-import type { ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useAuth } from "./auth/context";
-import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/auth/Login";
-import Cadastro from "./pages/auth/Cadastro";
-import HomeCandidato from "./pages/HomeCandidato";
-import Vagas from "./pages/Vagas";
-import DetalhesDaVaga from "./pages/DetalhesDaVaga";
-import PageTeste from "./pages/PageTeste";
-import DashboardRecrutador from "./pages/Dashboard/RecrutadorDeshboard";
-import VagasRecrutador from "./pages/VagasRecrutador";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { LandingPage } from "@/pages/Inicio";
+import { LoginPage } from "@/pages/auth/Login";
+import { RegisterPage } from "@/pages/auth/Cadastro";
+import { AppLayout } from "@/pages/AppLayout";
+import { CandidatoDashboard } from "@/pages/dashboard/CandidatoDashboard";
+import { RecrutadorDashboard } from "@/pages/dashboard/RecrutadorDashboard";
+import { JobsListPage } from "@/pages/vagas/JobsList";
+import { JobDetailsPage } from "@/pages/vagas/JobDetails";
+import { JobCreatePage } from "@/pages/vagas/JobCreate";
+import { MyJobsPage } from "@/pages/vagas/MyJobs";
+import { MyApplicationsPage } from "@/pages/applications/MyApplications";
+import { ApplicationDetailsPage } from "@/pages/applications/ApplicationDetails";
+import { ChallengeRunnerPage } from "@/pages/desafios/ChallengeRunner";
+import { RankingPage } from "@/pages/ranking/Ranking";
+import { ProfilePage } from "@/pages/perfil/Profile";
+import { ProtectedRoute } from "@/components/RotaProtegida";
+import { useAuthStore } from "@/store/auth";
 
-function Guard({
-  role,
-  children,
-}: {
-  role: "CANDIDATE" | "RECRUITER";
-  children: ReactNode;
-}) {
-  const { user, loading } = useAuth();
-  if (loading) return <p style={{ padding: 24 }}>Carregando…</p>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== role) return <Navigate to="/" replace />;
-  return children;
+function HomeByRole() {
+  const { user } = useAuthStore();
+  if (user?.role === "RECRUTADOR") return <RecrutadorDashboard />;
+  return <CandidatoDashboard />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/registo" element={<Navigate to="/cadastro" replace />} />
+      <Route path="/cadastro" element={<RegisterPage />} />
 
-      <Route
-        path="/candidato"
-        element={
-          <Guard role="CANDIDATE">
-            <HomeCandidato />
-          </Guard>
-        }
-      />
-      <Route
-        path="/candidato/vagas"
-        element={
-          <Guard role="CANDIDATE">
-            <Vagas />
-          </Guard>
-        }
-      />
-      <Route
-        path="/candidato/vagas/:id"
-        element={
-          <Guard role="CANDIDATE">
-            <DetalhesDaVaga />
-          </Guard>
-        }
-      />
-      <Route
-        path="/candidato/teste/:applicationId/:challengeId"
-        element={
-          <Guard role="CANDIDATE">
-            <PageTeste />
-          </Guard>
-        }
-      />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/app" element={<HomeByRole />} />
+          <Route path="/app/vagas" element={<JobsListPage />} />
+          <Route path="/app/vagas/:id" element={<JobDetailsPage />} />
+          <Route path="/app/perfil" element={<ProfilePage />} />
+          <Route path="/app/inscricoes/:id" element={<ApplicationDetailsPage />} />
+          <Route path="/app/inscricoes/:id/desafio/:challengeId" element={<ChallengeRunnerPage />} />
 
-      <Route
-        path="/recrutador"
-        element={
-          <Guard role="RECRUITER">
-            <DashboardRecrutador />
-          </Guard>
-        }
-      />
-      <Route
-        path="/recrutador/vagas"
-        element={
-          <Guard role="RECRUITER">
-            <VagasRecrutador />
-          </Guard>
-        }
-      />
+          {/* só Candidato */}
+          <Route element={<ProtectedRoute roles={["CANDIDATO"]} />}>
+            <Route path="/app/minhas-inscricoes" element={<MyApplicationsPage />} />
+          </Route>
+
+          {/* só Recrutador */}
+          <Route element={<ProtectedRoute roles={["RECRUTADOR"]} />}>
+            <Route path="/app/minhas-vagas" element={<MyJobsPage />} />
+            <Route path="/app/vagas/nova" element={<JobCreatePage />} />
+            <Route path="/app/vagas/:id/ranking" element={<RankingPage />} />
+          </Route>
+        </Route>
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
