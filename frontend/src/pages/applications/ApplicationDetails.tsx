@@ -9,7 +9,7 @@ import {
   Sparkles,
   ThumbsUp,
   ThumbsDown,
-  Github,
+  GitBranch,
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -191,7 +191,7 @@ export function ApplicationDetailsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Github className="h-5 w-5" /> GitHub
+              <GitBranch className="h-5 w-5" /> GitHub
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

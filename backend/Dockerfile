@@ -13,6 +13,6 @@ COPY . .
 
 RUN npx prisma generate
 
-EXPOSE 4000
+EXPOSE 4100
 
 CMD ["sh", "-c", "npx prisma db push && npm run seed && npx tsx src/server.ts"]

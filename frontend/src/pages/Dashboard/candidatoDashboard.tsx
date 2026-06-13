@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   Clock,
   Code2,
-  Github,
+  GitBranch,
   ListChecks,
   Sparkles,
   Target,
@@ -210,7 +210,7 @@ export function CandidatoDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Github className="h-5 w-5" /> Score do GitHub
+              <GitBranch className="h-5 w-5" /> Score do GitHub
             </CardTitle>
           </CardHeader>
           <CardContent>

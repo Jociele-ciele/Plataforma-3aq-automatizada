@@ -5,7 +5,7 @@ require("dotenv/config");
 const zod_1 = require("zod");
 const envSchema = zod_1.z.object({
     NODE_ENV: zod_1.z.enum(["development", "test", "production"]).default("development"),
-    PORT: zod_1.z.coerce.number().default(4000),
+    PORT: zod_1.z.coerce.number().default(4100),
     DATABASE_URL: zod_1.z.string(),
     JWT_SECRET: zod_1.z.string().min(8),
     JWT_REFRESH_SECRET: zod_1.z.string().min(8),
@@ -13,7 +13,7 @@ const envSchema = zod_1.z.object({
     JWT_REFRESH_EXPIRES_IN: zod_1.z.string().default("7d"),
     UPLOAD_DIR: zod_1.z.string().default("./uploads"),
     ENCRYPTION_KEY: zod_1.z.string().length(32, "ENCRYPTION_KEY precisa ter 32 caracteres"),
-    CORS_ORIGIN: zod_1.z.string().default("http://localhost:5173"),
+    CORS_ORIGIN: zod_1.z.string().default("http://localhost:5176"),
     AI_SERVICE_URL: zod_1.z.string().default("http://localhost:8000"),
 });
 const parsed = envSchema.safeParse(process.env);

@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UserPlus, ArrowRight, Mail, KeyRound, User2, Github } from "lucide-react";
+import { UserPlus, ArrowRight, Mail, KeyRound, User2, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/interface/button";
@@ -174,7 +174,7 @@ export function RegisterPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="github">Usuário do GitHub (opcional)</Label>
                   <div className="relative">
-                    <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <GitBranch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="github"
                       placeholder="ex.: octocat"

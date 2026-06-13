@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-talent}
       POSTGRES_DB: ${POSTGRES_DB:-talent}
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -43,7 +43,7 @@ services:
         condition: service_started
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      PORT: ${PORT:-4000}
+      PORT: ${PORT:-4100}
       DATABASE_URL: ${DATABASE_URL:-postgresql://talent:talent@db:5432/talent?schema=public}
       JWT_SECRET: ${JWT_SECRET:-segredo-dev}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-segredo-refresh-dev}
@@ -51,10 +51,10 @@ services:
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       UPLOAD_DIR: /app/uploads
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-32bytes-precisa-ter-32-bytes!!!!}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5176}
       AI_SERVICE_URL: http://ai:8000
     ports:
-      - "4000:4000"
+      - "4100:4100"
     volumes:
       - backend_uploads:/app/uploads
 
@@ -67,9 +67,9 @@ services:
     depends_on:
       - backend
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4100/api}
     ports:
-      - "5173:5173"
+      - "5176:5176"
 
 volumes:
   db_data:

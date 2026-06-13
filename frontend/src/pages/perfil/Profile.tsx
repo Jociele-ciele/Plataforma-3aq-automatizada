@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   Download,
   FileText,
-  Github,
+  GitBranch,
   Save,
   Trash2,
   Upload,
@@ -281,7 +281,7 @@ export function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Github className="h-5 w-5" /> Análise do GitHub
+                  <GitBranch className="h-5 w-5" /> Análise do GitHub
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -322,7 +322,7 @@ export function ProfilePage() {
                   onClick={() => analisarGithub.mutate()}
                   disabled={analisarGithub.isPending || !github}
                 >
-                  <Github className="h-4 w-4" />
+                  <GitBranch className="h-4 w-4" />
                   {analisarGithub.isPending
                     ? "Analisando..."
                     : data.githubAnalysis

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 beforeAll(() => {
   process.env.JWT_SECRET = "x".repeat(16);
   process.env.JWT_REFRESH_SECRET = "y".repeat(16);
-  process.env.DATABASE_URL = "postgresql://u:p@localhost:5432/t";
+  process.env.DATABASE_URL = "postgresql://u:p@localhost:5433/t";
   process.env.ENCRYPTION_KEY = "x".repeat(32);
 });
 

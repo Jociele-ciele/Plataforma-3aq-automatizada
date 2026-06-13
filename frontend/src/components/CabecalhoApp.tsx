@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, User, Briefcase, Trophy, Home, FileText, Sparkles } from "lucide-react";
+import { LogOut, User, Briefcase, Home, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/interface/button";
 import { Avatar, AvatarFallback } from "@/components/interface/avatar";
 import { Logo } from "./Logo";

@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -58,7 +58,6 @@ function solve(input) {
 
 export function ChallengeRunnerPage() {
   const { id: applicationId = "", challengeId = "" } = useParams();
-  const navigate = useNavigate();
 
   const { data: challenge, isLoading } = useQuery<Challenge>({
     queryKey: ["challenge", challengeId],

@@ -4,7 +4,7 @@ import {
   ArrowRight,
   Brain,
   Code2,
-  Github,
+  GitBranch,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -27,7 +27,7 @@ const recursos = [
     desc: "Códigos JavaScript rodam num ambiente seguro e ganham nota na hora.",
   },
   {
-    icon: Github,
+    icon: GitBranch,
     titulo: "Análise do GitHub",
     desc: "Olhamos repositórios, linguagens e atividade para entender o nível técnico.",
   },
