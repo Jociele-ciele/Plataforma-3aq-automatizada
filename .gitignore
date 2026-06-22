@@ -1,1 +1,20 @@
 node_modules
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Builds e artefatos gerados
+backend/dist
+frontend/dist
+*.tsbuildinfo
+
+# Uploads locais
+backend/uploads
+
+# Logs e SO
+*.log
+.DS_Store
+Thumbs.db

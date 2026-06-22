@@ -1,27 +1,63 @@
-import { Router } from "express";
-import { challengesController } from "./challenges.controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validate } from "../../middleware/validate";
-import { asyncHandler } from "../../utils/async-handler";
-import { createChallengeSchema, submitChallengeSchema } from "./challenges.schema";
+import { z } from "zod";
 
-const router = Router();
-router.use(authenticate);
+const alternativaSchema = z.object({
+  id: z.string().min(1),
+  texto: z.string().min(1),
+});
 
-router.post(
-  "/",
-  authorize("RECRUTADOR"),
-  validate(createChallengeSchema),
-  asyncHandler(challengesController.create)
-);
-router.get("/by-job/:vagaId", asyncHandler(challengesController.listByJob));
-router.get("/:id", asyncHandler(challengesController.getById));
-router.post(
-  "/:id/submit",
-  authorize("CANDIDATO"),
-  validate(submitChallengeSchema),
-  asyncHandler(challengesController.submit)
-);
-router.delete("/:id", authorize("RECRUTADOR"), asyncHandler(challengesController.remove));
+const casoTesteSchema = z.object({
+  entrada: z.array(z.unknown()),
+  saidaEsperada: z.unknown(),
+});
 
-export default router;
+const exemploSchema = z.object({
+  entrada: z.unknown(),
+  saida: z.unknown(),
+});
+
+export const createChallengeSchema = z
+  .object({
+    vagaId: z.string().min(1, "Informe a vaga"),
+    tipo: z.enum(["MULTIPLA_ESCOLHA", "CODIGO_JS"]),
+    enunciado: z.string().min(5, "Enunciado muito curto"),
+    peso: z.number().int().min(1).max(10).default(1),
+    alternativas: z.array(alternativaSchema).optional(),
+    respostaCorreta: z.string().optional(),
+    exemplos: z.array(exemploSchema).optional(),
+    casosTeste: z.array(casoTesteSchema).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.tipo === "MULTIPLA_ESCOLHA") {
+      if (!data.alternativas?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Informe pelo menos uma alternativa",
+          path: ["alternativas"],
+        });
+      }
+      if (!data.respostaCorreta) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Informe a resposta correta",
+          path: ["respostaCorreta"],
+        });
+      }
+    }
+
+    if (data.tipo === "CODIGO_JS" && !data.casosTeste?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe pelo menos um caso de teste",
+        path: ["casosTeste"],
+      });
+    }
+  });
+
+export const submitChallengeSchema = z.object({
+  codigo: z.string().optional(),
+  resposta: z.string().optional(),
+  applicationId: z.string().optional(),
+});
+
+export type CreateChallengeDTO = z.infer<typeof createChallengeSchema>;
+export type SubmitChallengeDTO = z.infer<typeof submitChallengeSchema>;
