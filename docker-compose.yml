@@ -44,7 +44,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-4100}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://talent:talent@db:5432/talent?schema=public}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-talent}:${POSTGRES_PASSWORD:-talent}@db:5432/${POSTGRES_DB:-talent}?schema=public
       JWT_SECRET: ${JWT_SECRET:-segredo-dev}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-segredo-refresh-dev}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
