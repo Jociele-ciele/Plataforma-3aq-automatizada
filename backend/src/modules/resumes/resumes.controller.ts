@@ -21,4 +21,18 @@ export const resumesController = {
   async last(req: Request, res: Response) {
     return res.json(await resumesService.getLastByUser(req.user!.sub));
   },
+
+  async download(req: Request, res: Response) {
+    const { pdf, nomeArquivo } = await resumesService.downloadPdf(
+      req.params.id,
+      req.user!.sub,
+      req.user!.role
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${nomeArquivo.replace(/"/g, "")}"`
+    );
+    return res.send(pdf);
+  },
 };

@@ -10,10 +10,16 @@ const upload = multer({
 });
 
 const router = Router();
-router.use(authenticate, authorize("CANDIDATO"));
+router.use(authenticate);
 
-router.post("/", upload.single("curriculo"), asyncHandler(resumesController.upload));
-router.get("/", asyncHandler(resumesController.list));
-router.get("/last", asyncHandler(resumesController.last));
+router.post(
+  "/",
+  authorize("CANDIDATO"),
+  upload.single("curriculo"),
+  asyncHandler(resumesController.upload)
+);
+router.get("/", authorize("CANDIDATO"), asyncHandler(resumesController.list));
+router.get("/last", authorize("CANDIDATO"), asyncHandler(resumesController.last));
+router.get("/:id/download", asyncHandler(resumesController.download));
 
 export default router;

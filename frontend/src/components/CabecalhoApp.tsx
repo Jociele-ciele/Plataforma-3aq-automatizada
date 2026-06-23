@@ -73,8 +73,8 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={() => {
+              navigate("/", { replace: true });
               logout();
-              navigate("/login");
             }}
             aria-label="Sair"
           >

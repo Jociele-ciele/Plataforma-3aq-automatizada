@@ -1,18 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Activity,
   ArrowDownRight,
+  ArrowRight,
   ArrowUpRight,
   Award,
   Briefcase,
   Crown,
+  ListChecks,
   PlusCircle,
   Sparkles,
   Star,
   TrendingUp,
+  Trophy,
   Users,
 } from "lucide-react";
 import {
@@ -68,6 +71,14 @@ interface Dashboard {
   porMes: { mes: string; total: number }[];
 }
 
+interface VagaResumo {
+  id: string;
+  titulo: string;
+  status: string;
+  senioridade: string;
+  _count: { applications: number; challenges: number };
+}
+
 const CORES_DONUT = ["hsl(263, 90%, 65%)", "hsl(187, 92%, 50%)", "hsl(330, 80%, 60%)"];
 
 const PERIODOS = [
@@ -78,17 +89,56 @@ const PERIODOS = [
 
 type PeriodoId = (typeof PERIODOS)[number]["id"];
 
+const REFETCH_OPTS = {
+  refetchInterval: 30_000,
+  refetchOnWindowFocus: true,
+} as const;
+
+function formatarDelta(delta: number) {
+  if (delta === 100) return { label: "Novo", positivo: true };
+  if (delta === 0) return { label: "0%", positivo: true };
+  return { label: `${Math.abs(delta)}%`, positivo: delta >= 0 };
+}
+
+function statusLabel(status: string) {
+  const map: Record<string, string> = {
+    INSCRITO: "Inscrito",
+    EM_ANALISE: "Em análise",
+    APROVADO: "Aprovado",
+    REPROVADO: "Reprovado",
+    ABERTA: "Aberta",
+    ENCERRADA: "Encerrada",
+    RASCUNHO: "Rascunho",
+  };
+  return map[status] ?? status;
+}
+
+function statusVariant(
+  status: string
+): "default" | "secondary" | "success" | "warning" | "destructive" {
+  if (status === "APROVADO" || status === "ABERTA") return "success";
+  if (status === "EM_ANALISE" || status === "INSCRITO") return "warning";
+  if (status === "REPROVADO") return "destructive";
+  return "secondary";
+}
+
 export function RecrutadorDashboard() {
   const { user } = useAuthStore();
   const [periodo, setPeriodo] = useState<PeriodoId>("180");
 
-  const { data, isLoading } = useQuery<Dashboard>({
+  const { data, isLoading, isFetching } = useQuery<Dashboard>({
     queryKey: ["dashboard-recrutador"],
     queryFn: async () =>
       (await api.get<Dashboard>("/ranking/dashboard/recrutador")).data,
+    ...REFETCH_OPTS,
   });
 
-  // Filtra a série de inscrições por mês de acordo com o período escolhido
+  const { data: minhasVagas = [] } = useQuery<VagaResumo[]>({
+    queryKey: ["my-jobs"],
+    queryFn: async () => (await api.get("/jobs/mine")).data,
+    ...REFETCH_OPTS,
+  });
+
   const serieFiltrada = useMemo(() => {
     if (!data) return [];
     const dias = Number(periodo);
@@ -106,6 +156,16 @@ export function RecrutadorDashboard() {
     [data]
   );
 
+  const vagasRecentes = useMemo(() => minhasVagas.slice(0, 5), [minhasVagas]);
+
+  const primeiraVagaComCandidatos = useMemo(
+    () =>
+      [...minhasVagas].sort(
+        (a, b) => b._count.applications - a._count.applications
+      )[0],
+    [minhasVagas]
+  );
+
   if (isLoading || !data) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -119,6 +179,10 @@ export function RecrutadorDashboard() {
     );
   }
 
+  const linkCandidatos = primeiraVagaComCandidatos
+    ? `/app/vagas/${primeiraVagaComCandidatos.id}/ranking`
+    : "/app/minhas-vagas";
+
   const stats = [
     {
       label: "Total de vagas",
@@ -127,6 +191,7 @@ export function RecrutadorDashboard() {
       icon: Briefcase,
       color: "text-primary",
       bg: "bg-primary/10",
+      to: "/app/minhas-vagas",
     },
     {
       label: "Vagas abertas",
@@ -135,6 +200,7 @@ export function RecrutadorDashboard() {
       icon: Sparkles,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
+      to: "/app/minhas-vagas",
     },
     {
       label: "Candidatos",
@@ -143,6 +209,7 @@ export function RecrutadorDashboard() {
       icon: Users,
       color: "text-fuchsia-500",
       bg: "bg-fuchsia-500/10",
+      to: linkCandidatos,
     },
     {
       label: "Média de notas",
@@ -151,21 +218,28 @@ export function RecrutadorDashboard() {
       icon: TrendingUp,
       color: "text-accent",
       bg: "bg-accent/10",
+      to: linkCandidatos,
     },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Cabeçalho */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row md:items-end md:justify-between gap-3"
       >
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-            Painel de {user?.nome.split(" ")[0]}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              Painel de {user?.nome.split(" ")[0]}
+            </h1>
+            {isFetching && (
+              <Badge variant="outline" className="text-[10px] animate-pulse">
+                Atualizando…
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Visão geral das vagas, candidatos e da inteligência da plataforma.
           </p>
@@ -177,10 +251,10 @@ export function RecrutadorDashboard() {
         </Button>
       </motion.div>
 
-      {/* Grid Superior — métricas avançadas */}
+      {/* 2 — Cards clicáveis */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => {
-          const positivo = s.delta >= 0;
+          const tendencia = formatarDelta(s.delta);
           return (
             <motion.div
               key={s.label}
@@ -188,44 +262,113 @@ export function RecrutadorDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="card-hover relative overflow-hidden">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div
-                      className={`h-10 w-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}
-                    >
-                      <s.icon className="h-5 w-5" />
+              <Link to={s.to} className="block group">
+                <Card className="card-hover relative overflow-hidden h-full transition-all group-hover:border-primary/40">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div
+                        className={`h-10 w-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}
+                      >
+                        <s.icon className="h-5 w-5" />
+                      </div>
+                      <span
+                        className={`flex items-center gap-1 text-xs font-bold rounded-full px-2 py-0.5 ${
+                          tendencia.positivo
+                            ? "bg-emerald-500/10 text-emerald-500"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {tendencia.positivo ? (
+                          <ArrowUpRight className="h-3 w-3" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3" />
+                        )}
+                        {tendencia.label}
+                      </span>
                     </div>
-                    <span
-                      className={`flex items-center gap-1 text-xs font-bold rounded-full px-2 py-0.5 ${
-                        positivo
-                          ? "bg-emerald-500/10 text-emerald-500"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {positivo ? (
-                        <ArrowUpRight className="h-3 w-3" />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3" />
-                      )}
-                      {Math.abs(s.delta)}%
-                    </span>
-                  </div>
-                  <p className="text-3xl font-extrabold">{s.v}</p>
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-2">
-                    vs. 30 dias anteriores
-                  </p>
-                </CardContent>
-              </Card>
+                    <p className="text-3xl font-extrabold">{s.v}</p>
+                    <p className="text-sm text-muted-foreground">{s.label}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-2 flex items-center gap-1">
+                      Ver detalhes
+                      <ArrowRight className="h-3 w-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Bloco analítico em duas colunas */}
+      {/* 3 — Suas vagas agora */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" /> Suas vagas agora
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Acompanhe candidatos e ranking de cada vaga
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/app/minhas-vagas">Ver todas</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {vagasRecentes.length === 0 ? (
+            <PainelVazio
+              titulo="Nenhuma vaga criada ainda"
+              descricao="Crie sua primeira vaga para começar a receber candidatos e ver o ranking aqui."
+              acoes={
+                <Button asChild variant="gradient" size="sm">
+                  <Link to="/app/vagas/nova">
+                    <PlusCircle className="h-4 w-4" /> Criar primeira vaga
+                  </Link>
+                </Button>
+              }
+            />
+          ) : (
+            <div className="space-y-2">
+              {vagasRecentes.map((vaga) => (
+                <div
+                  key={vaga.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-border/50 p-3 hover:bg-card/80 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold truncate">{vaga.titulo}</span>
+                      <Badge variant={statusVariant(vaga.status)}>
+                        {statusLabel(vaga.status)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vaga._count.applications} candidato
+                      {vaga._count.applications === 1 ? "" : "s"} ·{" "}
+                      {vaga._count.challenges} desafio
+                      {vaga._count.challenges === 1 ? "" : "s"} · {vaga.senioridade}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/app/vagas/${vaga.id}`}>
+                        <Briefcase className="h-3.5 w-3.5" /> Ver vaga
+                      </Link>
+                    </Button>
+                    <Button asChild variant="secondary" size="sm">
+                      <Link to={`/app/vagas/${vaga.id}/ranking`}>
+                        <Trophy className="h-3.5 w-3.5" /> Ranking
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-4">
-        {/* Coluna esquerda — gráfico principal */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-start justify-between gap-2">
             <div>
@@ -254,9 +397,30 @@ export function RecrutadorDashboard() {
           </CardHeader>
           <CardContent>
             {serieFiltrada.length === 0 ? (
-              <div className="h-[260px] flex items-center justify-center text-sm text-muted-foreground">
-                Sem inscrições no período selecionado.
-              </div>
+              <PainelVazio
+                titulo="Ainda sem inscrições neste período"
+                descricao={
+                  data.vagasAbertas > 0
+                    ? `Você tem ${data.vagasAbertas} vaga${data.vagasAbertas === 1 ? "" : "s"} aberta${data.vagasAbertas === 1 ? "" : "s"}. Quando candidatos se inscreverem, o gráfico será preenchido automaticamente.`
+                    : "Abra uma vaga para começar a receber candidaturas."
+                }
+                acoes={
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {data.vagasAbertas > 0 ? (
+                      <Button asChild variant="outline" size="sm">
+                        <Link to="/app/minhas-vagas">Ver minhas vagas</Link>
+                      </Button>
+                    ) : (
+                      <Button asChild variant="gradient" size="sm">
+                        <Link to="/app/vagas/nova">
+                          <PlusCircle className="h-4 w-4" /> Nova vaga
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                }
+                compacto
+              />
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={serieFiltrada}>
@@ -291,7 +455,6 @@ export function RecrutadorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Coluna direita — donut com total centralizado */}
         <Card>
           <CardHeader>
             <CardTitle>Status das vagas</CardTitle>
@@ -323,10 +486,7 @@ export function RecrutadorDashboard() {
                       borderRadius: 12,
                     }}
                   />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: 12 }}
-                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center -mt-6">
@@ -345,7 +505,6 @@ export function RecrutadorDashboard() {
         </Card>
       </div>
 
-      {/* Seção inferior larga — Top 5 + Atividades recentes */}
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -358,9 +517,16 @@ export function RecrutadorDashboard() {
           </CardHeader>
           <CardContent>
             {data.top5.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                Ainda não há candidatos suficientes para o ranking.
-              </p>
+              <PainelVazio
+                titulo="Ranking ainda vazio"
+                descricao="Assim que candidatos se inscreverem e fizerem os desafios, os melhores aparecerão aqui ordenados por nota."
+                acoes={
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/app/minhas-vagas">Gerenciar vagas</Link>
+                  </Button>
+                }
+                compacto
+              />
             ) : (
               <div className="space-y-2">
                 {data.top5.map((c, i) => {
@@ -436,7 +602,6 @@ export function RecrutadorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Timeline de atividades recentes */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -448,9 +613,18 @@ export function RecrutadorDashboard() {
           </CardHeader>
           <CardContent>
             {data.atividadesRecentes.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                Sem atividade no momento.
-              </p>
+              <PainelVazio
+                titulo="Nenhuma atividade recente"
+                descricao="As novas inscrições aparecerão aqui em tempo real, com status e nota do candidato."
+                acoes={
+                  data.vagasAbertas > 0 ? (
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/app/vagas">Ver vagas publicadas</Link>
+                    </Button>
+                  ) : undefined
+                }
+                compacto
+              />
             ) : (
               <ol className="relative space-y-4 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-border">
                 {data.atividadesRecentes.map((a) => (
@@ -467,14 +641,17 @@ export function RecrutadorDashboard() {
                       >
                         {a.candidato.nome.split(" ")[0]}
                       </Link>{" "}
-                      <span className="text-muted-foreground">
-                        se inscreveu em
-                      </span>{" "}
+                      <span className="text-muted-foreground">se inscreveu em</span>{" "}
                       <span className="font-medium">{a.vaga.titulo}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {tempoRelativo(a.createdAt)} · nota {a.notaFinal}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <Badge variant={statusVariant(a.status)} className="text-[10px]">
+                        {statusLabel(a.status)}
+                      </Badge>
+                      <p className="text-[11px] text-muted-foreground">
+                        {tempoRelativo(a.createdAt)} · nota {a.notaFinal}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -486,7 +663,33 @@ export function RecrutadorDashboard() {
   );
 }
 
-// Converte data ISO em texto relativo amigável.
+function PainelVazio({
+  titulo,
+  descricao,
+  acoes,
+  compacto = false,
+}: {
+  titulo: string;
+  descricao: string;
+  acoes?: ReactNode;
+  compacto?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-border/60 bg-muted/10 ${
+        compacto ? "py-10 px-4 min-h-[200px]" : "py-12 px-6"
+      }`}
+    >
+      <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+        <Sparkles className="h-6 w-6" />
+      </div>
+      <p className="font-semibold">{titulo}</p>
+      <p className="text-sm text-muted-foreground mt-1 max-w-md">{descricao}</p>
+      {acoes && <div className="mt-4">{acoes}</div>}
+    </div>
+  );
+}
+
 function tempoRelativo(iso: string) {
   const data = new Date(iso);
   const diff = Date.now() - data.getTime();

@@ -4,6 +4,30 @@ import { env } from "../../config/env";
 import { AppError, NotFoundError } from "../../utils/errors";
 import { githubService } from "../github/github.service";
 
+async function analisarCurriculoComVaga(
+  textoExtraido: string,
+  vaga: { titulo: string; descricao: string; tecnologias: string[] }
+) {
+  try {
+    const { data } = await axios.post(`${env.AI_SERVICE_URL}/triagem`, {
+      texto: textoExtraido,
+      tecnologias: vaga.tecnologias,
+      tituloVaga: vaga.titulo,
+      descricao: vaga.descricao,
+    });
+    return {
+      scoreCurriculo: Math.round(data.scoreAderencia),
+      resumoIA: data.resumo as string,
+    };
+  } catch (e) {
+    console.warn("[IA] indisponível, usando fallback simples:", (e as Error).message);
+    return {
+      scoreCurriculo: fallbackScore(textoExtraido, vaga.tecnologias),
+      resumoIA: "Análise simplificada (serviço de IA indisponível)",
+    };
+  }
+}
+
 export const applicationsService = {
   async apply(candidatoId: string, vagaId: string) {
     const vaga = await prisma.job.findUnique({ where: { id: vagaId } });
@@ -23,21 +47,10 @@ export const applicationsService = {
 
     let scoreCurriculo = 0;
     let resumoIA: string | null = null;
-    if (resume) {
-      try {
-        const { data } = await axios.post(`${env.AI_SERVICE_URL}/triagem`, {
-          texto: resume.textoExtraido,
-          tecnologias: vaga.tecnologias,
-          tituloVaga: vaga.titulo,
-          descricao: vaga.descricao,
-        });
-        scoreCurriculo = Math.round(data.scoreAderencia);
-        resumoIA = data.resumo;
-      } catch (e) {
-        console.warn("[IA] indisponível, usando fallback simples:", (e as Error).message);
-        scoreCurriculo = fallbackScore(resume.textoExtraido, vaga.tecnologias);
-        resumoIA = "Análise simplificada (serviço de IA indisponível)";
-      }
+    if (resume?.textoExtraido) {
+      const analise = await analisarCurriculoComVaga(resume.textoExtraido, vaga);
+      scoreCurriculo = analise.scoreCurriculo;
+      resumoIA = analise.resumoIA;
     }
 
     // GitHub
@@ -102,14 +115,65 @@ export const applicationsService = {
     });
   },
 
+  async reanalisarCurriculoDasInscricoes(candidatoId: string) {
+    const resume = await prisma.resume.findFirst({
+      where: { candidatoId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!resume?.textoExtraido) return;
+
+    const inscricoes = await prisma.application.findMany({
+      where: { candidatoId },
+      include: { vaga: true, submissions: { include: { challenge: { select: { peso: true } } } } },
+    });
+
+    for (const app of inscricoes) {
+      const analise = await analisarCurriculoComVaga(resume.textoExtraido, app.vaga);
+      const totalPesos =
+        app.submissions.reduce((acc, s) => acc + (s.challenge.peso ?? 1), 0) || 1;
+      const somaPond = app.submissions.reduce(
+        (acc, s) => acc + s.nota * (s.challenge.peso ?? 1),
+        0
+      );
+      const scoreDesafios = somaPond / totalPesos;
+      const notaFinal = Math.round(
+        analise.scoreCurriculo * 0.3 + app.scoreGithub * 0.2 + scoreDesafios * 0.5
+      );
+
+      await prisma.application.update({
+        where: { id: app.id },
+        data: {
+          scoreCurriculo: analise.scoreCurriculo,
+          resumoIA: analise.resumoIA,
+          scoreDesafios,
+          notaFinal,
+        },
+      });
+    }
+  },
+
   async atualizarNotaFinal(applicationId: string) {
     const app = await prisma.application.findUnique({
       where: { id: applicationId },
       include: {
+        vaga: true,
         submissions: { include: { challenge: { select: { peso: true } } } },
       },
     });
     if (!app) throw new NotFoundError();
+
+    let scoreCurriculo = app.scoreCurriculo;
+    let resumoIA = app.resumoIA;
+
+    const resume = await prisma.resume.findFirst({
+      where: { candidatoId: app.candidatoId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (resume?.textoExtraido) {
+      const analise = await analisarCurriculoComVaga(resume.textoExtraido, app.vaga);
+      scoreCurriculo = analise.scoreCurriculo;
+      resumoIA = analise.resumoIA;
+    }
 
     const totalPesos = app.submissions.reduce((acc, s) => acc + (s.challenge.peso ?? 1), 0) || 1;
     const somaPond = app.submissions.reduce(
@@ -119,12 +183,12 @@ export const applicationsService = {
     const scoreDesafios = somaPond / totalPesos;
 
     const notaFinal = Math.round(
-      app.scoreCurriculo * 0.3 + app.scoreGithub * 0.2 + scoreDesafios * 0.5
+      scoreCurriculo * 0.3 + app.scoreGithub * 0.2 + scoreDesafios * 0.5
     );
 
     return prisma.application.update({
       where: { id: applicationId },
-      data: { scoreDesafios, notaFinal },
+      data: { scoreCurriculo, resumoIA, scoreDesafios, notaFinal },
     });
   },
 
@@ -158,6 +222,16 @@ export const applicationsService = {
             email: true,
             github: true,
             githubAnalysis: true,
+            resumes: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: {
+                id: true,
+                nomeArquivo: true,
+                textoExtraido: true,
+                createdAt: true,
+              },
+            },
           },
         },
         submissions: { include: { challenge: true } },

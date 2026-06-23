@@ -49,6 +49,12 @@ interface ApplicationDetail {
     email: string;
     github: string | null;
     githubAnalysis: { score: number; tecnologias: string[] } | null;
+    resumes: {
+      id: string;
+      nomeArquivo: string;
+      textoExtraido: string;
+      createdAt: string;
+    }[];
   };
   submissions: {
     id: string;
@@ -90,6 +96,25 @@ export function ApplicationDetailsPage() {
 
   const ehRecrutador =
     user?.role === "RECRUTADOR" && data.vaga.recrutador.id === user.id;
+
+  const curriculo = data.candidato.resumes[0] ?? null;
+
+  async function baixarCurriculo() {
+    if (!curriculo) return;
+    try {
+      const resp = await api.get(`/resumes/${curriculo.id}/download`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(resp.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = curriculo.nomeArquivo;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Não foi possível baixar o currículo");
+    }
+  }
 
   const desafiosFeitos = new Set(data.submissions.map((s) => s.challenge.id));
 
@@ -186,6 +211,51 @@ export function ApplicationDetailsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" /> Currículo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {!curriculo ? (
+            <p className="text-sm text-muted-foreground">
+              O candidato ainda não enviou currículo em PDF. Por isso a nota de
+              currículo (IA) está em 0.
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="font-medium">{curriculo.nomeArquivo}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Enviado em {formatDate(curriculo.createdAt)}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={baixarCurriculo}>
+                  <FileText className="h-4 w-4" /> Baixar PDF
+                </Button>
+              </div>
+              <div className="rounded-xl border border-border/50 bg-muted/20 p-4 max-h-48 overflow-y-auto">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Texto lido pela IA
+                </p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {curriculo.textoExtraido.slice(0, 1200)}
+                  {curriculo.textoExtraido.length > 1200 ? "…" : ""}
+                </p>
+              </div>
+              {data.scoreCurriculo === 0 && ehRecrutador && (
+                <p className="text-xs text-amber-500">
+                  A inscrição pode ter sido feita antes do envio do currículo.
+                  Clique em &quot;Recalcular nota&quot; para a IA analisar de novo.
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {data.candidato.githubAnalysis && (
         <Card>

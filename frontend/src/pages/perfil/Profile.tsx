@@ -100,6 +100,8 @@ export function ProfilePage() {
     onSuccess: () => {
       toast.success("Currículo enviado e processado!");
       qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["application"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-candidato"] });
     },
     onError: (e: { response?: { data?: { error?: string } } }) =>
       toast.error(e.response?.data?.error ?? "Erro ao enviar"),
@@ -136,8 +138,8 @@ export function ProfilePage() {
       return;
     await api.delete("/users/me");
     toast.success("Conta excluída");
+    navigate("/", { replace: true });
     logout();
-    navigate("/");
   }
 
   if (isLoading || !data) {
@@ -264,9 +266,32 @@ export function ProfilePage() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">{r.nomeArquivo}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(r.createdAt).toLocaleDateString("pt-BR")}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const resp = await api.get(`/resumes/${r.id}/download`, {
+                                  responseType: "blob",
+                                });
+                                const url = URL.createObjectURL(resp.data);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = r.nomeArquivo;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              } catch {
+                                toast.error("Erro ao baixar");
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
