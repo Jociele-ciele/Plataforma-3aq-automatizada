@@ -1,1 +1,0 @@
-{"version":3,"file":"applications.controller.d.ts","sourceRoot":"","sources":["../../../src/modules/applications/applications.controller.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAU5C,eAAO,MAAM,sBAAsB;eAChB,OAAO,OAAO,QAAQ;kBAMnB,OAAO,OAAO,QAAQ;mBAIrB,OAAO,OAAO,QAAQ;iBAMxB,OAAO,OAAO,QAAQ;mBAMpB,OAAO,OAAO,QAAQ;sBAYnB,OAAO,OAAO,QAAQ;CAG/C,CAAC"}
