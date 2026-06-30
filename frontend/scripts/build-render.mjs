@@ -5,7 +5,7 @@ const apiUrl = backend ? `${backend}/api` : "/api";
 
 console.log(`Building frontend with VITE_API_URL=${apiUrl}`);
 
-execSync("npx vite build", {
+execSync("npm run build:vite", {
   stdio: "inherit",
   env: { ...process.env, VITE_API_URL: apiUrl },
 });
