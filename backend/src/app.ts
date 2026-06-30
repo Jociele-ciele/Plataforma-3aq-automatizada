@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 
 import { env } from "./config/env";
+import { swaggerSpec } from "./config/swagger";
 import { errorHandler } from "./middleware/error-handler";
 import { generalLimiter } from "./middleware/rate-limit";
 
@@ -19,7 +21,18 @@ import rankingRoutes from "./modules/ranking/ranking.routes";
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+        },
+      },
+    })
+  );
   app.use(cors({
     origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()),
     credentials: true,
@@ -31,6 +44,16 @@ export function createApp() {
 
   app.get("/api/health", (_req, res) =>
     res.json({ ok: true, service: "3aq-talent-backend", env: env.NODE_ENV })
+  );
+
+  app.get("/api/docs.json", (_req, res) => res.json(swaggerSpec));
+  app.use(
+    "/api/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customSiteTitle: "3aq Talent API",
+      swaggerOptions: { persistAuthorization: true },
+    })
   );
 
   app.use("/api/auth", authRoutes);
