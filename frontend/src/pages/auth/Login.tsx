@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,6 +38,10 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  useEffect(() => {
+    api.get("/health").catch(() => undefined);
+  }, []);
+
   async function onSubmit(data: FormData) {
     try {
       const { data: r } = await api.post("/auth/login", data);
@@ -44,7 +49,14 @@ export function LoginPage() {
       toast.success(`Bem-vindo de volta, ${r.user.nome.split(" ")[0]}!`);
       navigate("/app");
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { error?: string } } };
+      const err = e as {
+        code?: string;
+        response?: { data?: { error?: string } };
+      };
+      if (err.code === "ECONNABORTED") {
+        toast.error("O servidor está acordando. Aguarde 30 segundos e tente de novo.");
+        return;
+      }
       toast.error(err.response?.data?.error ?? "Não foi possível entrar");
     }
   }
