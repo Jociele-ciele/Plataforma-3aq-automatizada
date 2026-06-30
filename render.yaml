@@ -53,8 +53,13 @@ services:
   - type: web
     name: talent-frontend
     runtime: static
-    buildCommand: cd frontend && npm install && VITE_API_URL="$BACKEND_PUBLIC_URL/api" npm run build
-    staticPublishPath: frontend/dist
+    rootDir: frontend
+    buildCommand: npm install && npm run build:render
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: BACKEND_PUBLIC_URL
         fromService:
