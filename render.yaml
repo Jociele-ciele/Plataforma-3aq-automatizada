@@ -36,7 +36,10 @@ services:
           name: talent-ai
           envVarKey: RENDER_EXTERNAL_URL
       - key: CORS_ORIGIN
-        value: https://talent-frontend.onrender.com
+        fromService:
+          type: web
+          name: talent-frontend
+          envVarKey: RENDER_EXTERNAL_URL
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -56,6 +59,7 @@ services:
     plan: free
     dockerfilePath: ./frontend/Dockerfile.prod
     dockerContext: ./frontend
+    healthCheckPath: /
     envVars:
       - key: BACKEND_URL
         fromService:
