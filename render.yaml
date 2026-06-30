@@ -34,7 +34,7 @@ services:
         fromService:
           type: web
           name: talent-ai
-          envVarKey: RENDER_INTERNAL_URL
+          envVarKey: RENDER_EXTERNAL_URL
       - key: CORS_ORIGIN
         value: https://talent-frontend.onrender.com
       - key: JWT_SECRET
