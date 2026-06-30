@@ -1,0 +1,64 @@
+# Blueprint Render — deploy em https://dashboard.render.com/blueprints
+# Conecte o repositório GitHub e aplique este blueprint.
+
+databases:
+  - name: talent-db
+    plan: free
+    databaseName: talent
+    user: talent
+
+services:
+  - type: web
+    name: talent-ai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./ai-service/Dockerfile
+    dockerContext: ./ai-service
+    healthCheckPath: /health
+
+  - type: web
+    name: talent-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: talent-db
+          property: connectionString
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: talent-ai
+          envVarKey: RENDER_INTERNAL_URL
+      - key: CORS_ORIGIN
+        value: https://talent-frontend.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: UPLOAD_DIR
+        value: /app/uploads
+      - key: ENCRYPTION_KEY
+        value: 32bytes-precisa-ter-32-bytes!!!!
+
+  - type: web
+    name: talent-frontend
+    runtime: static
+    plan: free
+    buildCommand: cd frontend && npm install && VITE_API_URL="$BACKEND_PUBLIC_URL/api" npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: BACKEND_PUBLIC_URL
+        fromService:
+          type: web
+          name: talent-backend
+          envVarKey: RENDER_EXTERNAL_URL
