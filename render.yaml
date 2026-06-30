@@ -54,7 +54,7 @@ services:
     name: talent-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build:prod
+    buildCommand: npm install --include=dev && npm run build:prod
     staticPublishPath: dist
     routes:
       - type: rewrite
